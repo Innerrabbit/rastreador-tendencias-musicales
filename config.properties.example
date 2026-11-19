@@ -1,0 +1,7 @@
+# Ejemplo SIN secretos. El programa lee estas variables del entorno;
+# este archivo solo documenta qué valores hay que definir.
+# No subas nunca la contraseña real al repositorio.
+
+BD_URL=jdbc:mysql://localhost:3306/rastreador_tendencias?useUnicode=true&characterEncoding=UTF-8
+BD_USUARIO=tu_usuario
+BD_CLAVE=tu_contrasena
