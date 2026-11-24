@@ -4,6 +4,7 @@ import co.edu.sena.rastreador.dao.ArtistaDao;
 import co.edu.sena.rastreador.dao.ArtistaDaoJdbc;
 import co.edu.sena.rastreador.dao.CancionDao;
 import co.edu.sena.rastreador.dao.CancionDaoJdbc;
+import co.edu.sena.rastreador.excepcion.RecursoNoEncontradoException;
 import co.edu.sena.rastreador.excepcion.ReglaNegocioException;
 import co.edu.sena.rastreador.modelo.Artista;
 import co.edu.sena.rastreador.modelo.Cancion;
@@ -76,14 +77,14 @@ public class CatalogoServicio {
         artista.setUrlPlataforma(
                 textoOpcional(artista.getUrlPlataforma(), "La URL del artista", MAX_URL));
         if (!artistaDao.actualizar(artista)) {
-            throw new ReglaNegocioException(
+            throw new RecursoNoEncontradoException(
                     "No existe un artista con id " + artista.getIdArtista() + ".");
         }
     }
 
     public void eliminarArtista(int idArtista) {
         if (!artistaDao.eliminar(idArtista)) {
-            throw new ReglaNegocioException("No existe un artista con id " + idArtista + ".");
+            throw new RecursoNoEncontradoException("No existe un artista con id " + idArtista + ".");
         }
     }
 
@@ -139,14 +140,14 @@ public class CatalogoServicio {
         cancion.setUrlPlataforma(
                 textoOpcional(cancion.getUrlPlataforma(), "La URL de la canción", MAX_URL));
         if (!cancionDao.actualizar(cancion)) {
-            throw new ReglaNegocioException(
+            throw new RecursoNoEncontradoException(
                     "No existe una canción con id " + cancion.getIdCancion() + ".");
         }
     }
 
     public void eliminarCancion(int idCancion) {
         if (!cancionDao.eliminar(idCancion)) {
-            throw new ReglaNegocioException("No existe una canción con id " + idCancion + ".");
+            throw new RecursoNoEncontradoException("No existe una canción con id " + idCancion + ".");
         }
     }
 
