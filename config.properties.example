@@ -1,7 +1,12 @@
 # Ejemplo SIN secretos. El programa lee estas variables del entorno;
 # este archivo solo documenta qué valores hay que definir.
-# No subas nunca la contraseña real al repositorio.
+# No subas nunca las contraseñas reales al repositorio.
 
+# Base de datos (módulos de catálogo y de listas y tendencias)
 BD_URL=jdbc:mysql://localhost:3306/rastreador_tendencias?useUnicode=true&characterEncoding=UTF-8
 BD_USUARIO=tu_usuario
 BD_CLAVE=tu_contrasena
+
+# Usuarios de la API web (solo la aplicación web los usa; el menú de consola no)
+ADMIN_CLAVE=una_clave_para_admin
+ANALISTA_CLAVE=una_clave_para_analista

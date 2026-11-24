@@ -1,0 +1,2445 @@
+{
+  "info": {
+    "name": "Rastreador de Tendencias Musicales - Pruebas de la API",
+    "description": "Casos de prueba CP-01 a CP-46. Antes de ejecutar: definir adminClave y analistaClave (variables de la colección) con las mismas claves de ADMIN_CLAVE y ANALISTA_CLAVE. Ejecutar con Collection Runner en orden; la colección crea sus propios datos y los elimina al final.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "adminUsuario",
+      "value": "admin"
+    },
+    {
+      "key": "adminClave",
+      "value": "CAMBIAR_POR_ADMIN_CLAVE"
+    },
+    {
+      "key": "analistaUsuario",
+      "value": "analista"
+    },
+    {
+      "key": "analistaClave",
+      "value": "CAMBIAR_POR_ANALISTA_CLAVE"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "function f(dias, hora) { const d = new Date(); d.setDate(d.getDate() + dias); const p = n => String(n).padStart(2, \"0\");",
+          "  return d.getFullYear() + \"-\" + p(d.getMonth() + 1) + \"-\" + p(d.getDate()) + \"T\" + hora; }",
+          "pm.collectionVariables.set(\"fecha3\", f(-3, \"12:00:00\"));",
+          "pm.collectionVariables.set(\"fecha2\", f(-2, \"12:00:00\"));",
+          "pm.collectionVariables.set(\"fecha1\", f(-1, \"12:00:00\"));",
+          "pm.collectionVariables.set(\"fecha1tarde\", f(-1, \"20:00:00\"));",
+          "pm.collectionVariables.set(\"fechaFutura\", f(2, \"12:00:00\"));"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Seguridad",
+      "item": [
+        {
+          "name": "CP-01 Consultar listas sin enviar credenciales",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"sufijo\", String(Date.now()).slice(-8));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-01: responde HTTP 401\", function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/listas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "listas"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CP-02 Consultar listas con la clave incorrecta",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-02: responde HTTP 401\", function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsuario}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "clave-equivocada",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/listas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "listas"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CP-03 Un ANALISTA consulta las listas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-03: responde HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"CP-03: el cuerpo es un arreglo\", function () { pm.expect(pm.response.json()).to.be.an(\"array\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{analistaUsuario}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{analistaClave}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/listas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "listas"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CP-04 Un ANALISTA intenta registrar una lista",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-04: responde HTTP 403\", function () { pm.response.to.have.status(403); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{analistaUsuario}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{analistaClave}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/listas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "listas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idPlataforma\": \"LST-NO-{{sufijo}}\",\n  \"nombre\": \"No debe crearse\",\n  \"plataforma\": \"SPOTIFY\",\n  \"region\": \"CO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "CP-05 Un ANALISTA intenta eliminar una lista",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-05: responde HTTP 403\", function () { pm.response.to.have.status(403); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{analistaUsuario}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{analistaClave}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/listas/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "listas",
+                "1"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Catálogo",
+      "item": [
+        {
+          "name": "CP-06 Registrar un artista",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-06: responde HTTP 201\", function () { pm.response.to.have.status(201); });",
+                  "pm.collectionVariables.set(\"idArtista\", pm.response.json().idArtista);",
+                  "pm.test(\"CP-06: devuelve el id generado\", function () { pm.expect(pm.response.json().idArtista).to.be.a(\"number\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsuario}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminClave}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/artistas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "artistas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idPlataforma\": \"ART-PM-{{sufijo}}\",\n  \"nombre\": \"Artista PM {{sufijo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "CP-07 Registrar un artista con un idPlataforma repetido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-07: responde HTTP 400\", function () { pm.response.to.have.status(400); });",
+                  "pm.test(\"CP-07: el mensaje contiene 'Ya existe'\", function () { pm.expect(pm.response.json().mensaje).to.include(\"Ya existe\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsuario}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminClave}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/artistas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "artistas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idPlataforma\": \"ART-PM-{{sufijo}}\",\n  \"nombre\": \"Duplicado\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "CP-08 Registrar un artista sin nombre",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-08: responde HTTP 400\", function () { pm.response.to.have.status(400); });",
+                  "pm.test(\"CP-08: el mensaje contiene 'obligatorio'\", function () { pm.expect(pm.response.json().mensaje).to.include(\"obligatorio\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsuario}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminClave}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/artistas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "artistas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idPlataforma\": \"ART-PM-SN-{{sufijo}}\",\n  \"nombre\": \" \"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "CP-09 Buscar artistas por nombre",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-09: responde HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"CP-09: la lista incluye el artista creado\", function () { const idp = \"ART-PM-\" + pm.collectionVariables.get(\"sufijo\"); pm.expect(pm.response.json().map(a => a.idPlataforma)).to.include(idp); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{analistaUsuario}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{analistaClave}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/artistas?nombre=PM {{sufijo}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "artistas"
+              ],
+              "query": [
+                {
+                  "key": "nombre",
+                  "value": "PM {{sufijo}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "CP-10 Consultar un artista por id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-10: responde HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"CP-10: coincide el idPlataforma\", function () { pm.expect(pm.response.json().idPlataforma).to.eql(\"ART-PM-\" + pm.collectionVariables.get(\"sufijo\")); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{analistaUsuario}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{analistaClave}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/artistas/{{idArtista}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "artistas",
+                "{{idArtista}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CP-11 Consultar un artista que no existe",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-11: responde HTTP 404\", function () { pm.response.to.have.status(404); });",
+                  "pm.test(\"CP-11: el mensaje contiene 'No existe'\", function () { pm.expect(pm.response.json().mensaje).to.include(\"No existe\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{analistaUsuario}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{analistaClave}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/artistas/999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "artistas",
+                "999999"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CP-12 Actualizar el nombre de un artista",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-12: responde HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"CP-12: el nombre cambió\", function () { pm.expect(pm.response.json().nombre).to.include(\"Editado\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsuario}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminClave}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/artistas/{{idArtista}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "artistas",
+                "{{idArtista}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Artista PM Editado {{sufijo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "CP-13 Registrar una canción con un artista existente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-13: responde HTTP 201\", function () { pm.response.to.have.status(201); });",
+                  "pm.collectionVariables.set(\"idCancion\", pm.response.json().idCancion);",
+                  "pm.test(\"CP-13: la canción tiene 1 artista\", function () { pm.expect(pm.response.json().artistas.length).to.eql(1); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsuario}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminClave}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/canciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "canciones"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idPlataforma\": \"CAN-PM-{{sufijo}}\",\n  \"titulo\": \"Canción PM {{sufijo}}\",\n  \"duracionMs\": 200000,\n  \"genero\": \"Pop\",\n  \"artistas\": [\n    \"ART-PM-{{sufijo}}\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "CP-14 Registrar una canción con un idPlataforma repetido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-14: responde HTTP 400\", function () { pm.response.to.have.status(400); });",
+                  "pm.test(\"CP-14: el mensaje contiene 'Ya existe'\", function () { pm.expect(pm.response.json().mensaje).to.include(\"Ya existe\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsuario}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminClave}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/canciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "canciones"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idPlataforma\": \"CAN-PM-{{sufijo}}\",\n  \"titulo\": \"Duplicada\",\n  \"duracionMs\": 1000,\n  \"artistas\": [\n    \"ART-PM-{{sufijo}}\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "CP-15 Registrar una canción con un artista no registrado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-15: responde HTTP 400\", function () { pm.response.to.have.status(400); });",
+                  "pm.test(\"CP-15: el mensaje contiene 'no está registrado'\", function () { pm.expect(pm.response.json().mensaje).to.include(\"no está registrado\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsuario}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminClave}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/canciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "canciones"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idPlataforma\": \"CAN-PM-NA-{{sufijo}}\",\n  \"titulo\": \"Sin artista válido\",\n  \"duracionMs\": 1000,\n  \"artistas\": [\n    \"NO-EXISTE\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "CP-16 Registrar una canción sin duración",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-16: responde HTTP 400\", function () { pm.response.to.have.status(400); });",
+                  "pm.test(\"CP-16: el mensaje contiene 'duracionMs'\", function () { pm.expect(pm.response.json().mensaje).to.include(\"duracionMs\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsuario}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminClave}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/canciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "canciones"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idPlataforma\": \"CAN-PM-SD-{{sufijo}}\",\n  \"titulo\": \"Sin duración\",\n  \"artistas\": [\n    \"ART-PM-{{sufijo}}\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "CP-17 Buscar canciones por título",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-17: responde HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"CP-17: la lista incluye la canción creada\", function () { pm.expect(pm.response.json().map(c => c.idCancion)).to.include(Number(pm.collectionVariables.get(\"idCancion\"))); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{analistaUsuario}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{analistaClave}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/canciones?titulo=PM {{sufijo}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "canciones"
+              ],
+              "query": [
+                {
+                  "key": "titulo",
+                  "value": "PM {{sufijo}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "CP-18 Consultar una canción por id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-18: responde HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"CP-18: trae el artista asociado\", function () { pm.expect(pm.response.json().artistas[0].idPlataforma).to.eql(\"ART-PM-\" + pm.collectionVariables.get(\"sufijo\")); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{analistaUsuario}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{analistaClave}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/canciones/{{idCancion}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "canciones",
+                "{{idCancion}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CP-19 Actualizar el título y la duración de una canción",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-19: responde HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"CP-19: se actualizaron título y duración\", function () { const j = pm.response.json(); pm.expect(j.titulo).to.include(\"Editada\"); pm.expect(j.duracionMs).to.eql(215000); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsuario}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminClave}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/canciones/{{idCancion}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "canciones",
+                "{{idCancion}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Canción PM Editada {{sufijo}}\",\n  \"duracionMs\": 215000,\n  \"genero\": \"Rock\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Listas",
+      "item": [
+        {
+          "name": "CP-20 Registrar una lista de reproducción",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-20: responde HTTP 201\", function () { pm.response.to.have.status(201); });",
+                  "pm.collectionVariables.set(\"idLista\", pm.response.json().idLista);",
+                  "pm.test(\"CP-20: la plataforma se normaliza a SPOTIFY\", function () { pm.expect(pm.response.json().plataforma).to.eql(\"SPOTIFY\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsuario}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminClave}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/listas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "listas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idPlataforma\": \"LST-PM-{{sufijo}}\",\n  \"nombre\": \"Top Colombia PM {{sufijo}}\",\n  \"plataforma\": \"spotify\",\n  \"region\": \"CO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "CP-21 Registrar una lista con una plataforma no válida",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-21: responde HTTP 400\", function () { pm.response.to.have.status(400); });",
+                  "pm.test(\"CP-21: el mensaje contiene 'SPOTIFY'\", function () { pm.expect(pm.response.json().mensaje).to.include(\"SPOTIFY\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsuario}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminClave}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/listas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "listas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idPlataforma\": \"LST-PM-X-{{sufijo}}\",\n  \"nombre\": \"Plataforma inválida\",\n  \"plataforma\": \"TIDAL\",\n  \"region\": \"CO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "CP-22 Registrar una lista con un idPlataforma repetido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-22: responde HTTP 400\", function () { pm.response.to.have.status(400); });",
+                  "pm.test(\"CP-22: el mensaje contiene 'Ya existe'\", function () { pm.expect(pm.response.json().mensaje).to.include(\"Ya existe\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsuario}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminClave}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/listas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "listas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idPlataforma\": \"LST-PM-{{sufijo}}\",\n  \"nombre\": \"Duplicada\",\n  \"plataforma\": \"SPOTIFY\",\n  \"region\": \"CO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "CP-23 Listar todas las listas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-23: responde HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"CP-23: incluye la lista creada\", function () { pm.expect(pm.response.json().map(l => l.idLista)).to.include(Number(pm.collectionVariables.get(\"idLista\"))); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{analistaUsuario}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{analistaClave}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/listas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "listas"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CP-24 Consultar una lista por id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-24: responde HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"CP-24: coincide la región\", function () { pm.expect(pm.response.json().region).to.eql(\"CO\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{analistaUsuario}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{analistaClave}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/listas/{{idLista}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "listas",
+                "{{idLista}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CP-25 Consultar una lista que no existe",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-25: responde HTTP 404\", function () { pm.response.to.have.status(404); });",
+                  "pm.test(\"CP-25: el mensaje contiene 'No existe'\", function () { pm.expect(pm.response.json().mensaje).to.include(\"No existe\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{analistaUsuario}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{analistaClave}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/listas/999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "listas",
+                "999999"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CP-26 Actualizar una lista",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-26: responde HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"CP-26: cambió el nombre y la región\", function () { const j = pm.response.json(); pm.expect(j.nombre).to.include(\"Top 50\"); pm.expect(j.region).to.eql(\"CO-BOG\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsuario}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminClave}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/listas/{{idLista}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "listas",
+                "{{idLista}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Top 50 Colombia PM {{sufijo}}\",\n  \"plataforma\": \"SPOTIFY\",\n  \"region\": \"CO-BOG\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tendencias",
+      "item": [
+        {
+          "name": "CP-27 Registrar la captura más antigua (puesto 10)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-27: responde HTTP 201\", function () { pm.response.to.have.status(201); });",
+                  "pm.collectionVariables.set(\"idTend1\", pm.response.json().idTendencia);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsuario}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminClave}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tendencias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tendencias"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idCancion\": {{idCancion}},\n  \"idLista\": {{idLista}},\n  \"fechaCaptura\": \"{{fecha3}}\",\n  \"posicion\": 10\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "CP-28 Registrar la segunda captura (puesto 4, con streams)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-28: responde HTTP 201\", function () { pm.response.to.have.status(201); });",
+                  "pm.collectionVariables.set(\"idTend2\", pm.response.json().idTendencia);",
+                  "pm.test(\"CP-28: conserva los streams\", function () { pm.expect(pm.response.json().streams).to.eql(12345); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsuario}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminClave}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tendencias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tendencias"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idCancion\": {{idCancion}},\n  \"idLista\": {{idLista}},\n  \"fechaCaptura\": \"{{fecha2}}\",\n  \"posicion\": 4,\n  \"streams\": 12345\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "CP-29 Registrar la tercera captura (puesto 7)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-29: responde HTTP 201\", function () { pm.response.to.have.status(201); });",
+                  "pm.collectionVariables.set(\"idTend3\", pm.response.json().idTendencia);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsuario}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminClave}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tendencias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tendencias"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idCancion\": {{idCancion}},\n  \"idLista\": {{idLista}},\n  \"fechaCaptura\": \"{{fecha1}}\",\n  \"posicion\": 7\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "CP-30 Registrar otra captura de la misma canción y lista el mismo día",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-30: responde HTTP 400\", function () { pm.response.to.have.status(400); });",
+                  "pm.test(\"CP-30: el mensaje contiene 'ya tiene una captura'\", function () { pm.expect(pm.response.json().mensaje).to.include(\"ya tiene una captura\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsuario}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminClave}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tendencias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tendencias"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idCancion\": {{idCancion}},\n  \"idLista\": {{idLista}},\n  \"fechaCaptura\": \"{{fecha1tarde}}\",\n  \"posicion\": 9\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "CP-31 Registrar una captura de una canción que no existe",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-31: responde HTTP 404\", function () { pm.response.to.have.status(404); });",
+                  "pm.test(\"CP-31: el mensaje contiene 'No existe una canción'\", function () { pm.expect(pm.response.json().mensaje).to.include(\"No existe una canción\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsuario}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminClave}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tendencias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tendencias"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idCancion\": 999999,\n  \"idLista\": {{idLista}},\n  \"fechaCaptura\": \"{{fecha3}}\",\n  \"posicion\": 5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "CP-32 Registrar una captura con posición 0",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-32: responde HTTP 400\", function () { pm.response.to.have.status(400); });",
+                  "pm.test(\"CP-32: el mensaje contiene 'mayor o igual a 1'\", function () { pm.expect(pm.response.json().mensaje).to.include(\"mayor o igual a 1\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsuario}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminClave}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tendencias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tendencias"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idCancion\": {{idCancion}},\n  \"idLista\": {{idLista}},\n  \"fechaCaptura\": \"{{fecha3}}\",\n  \"posicion\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "CP-33 Registrar una captura con fecha futura",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-33: responde HTTP 400\", function () { pm.response.to.have.status(400); });",
+                  "pm.test(\"CP-33: el mensaje contiene 'futura'\", function () { pm.expect(pm.response.json().mensaje).to.include(\"futura\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsuario}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminClave}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tendencias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tendencias"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idCancion\": {{idCancion}},\n  \"idLista\": {{idLista}},\n  \"fechaCaptura\": \"{{fechaFutura}}\",\n  \"posicion\": 5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "CP-34 Registrar una captura sin idCancion",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-34: responde HTTP 400\", function () { pm.response.to.have.status(400); });",
+                  "pm.test(\"CP-34: el mensaje contiene 'idCancion'\", function () { pm.expect(pm.response.json().mensaje).to.include(\"idCancion\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsuario}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminClave}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tendencias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tendencias"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idLista\": {{idLista}},\n  \"fechaCaptura\": \"{{fecha3}}\",\n  \"posicion\": 5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Trayectoria",
+      "item": [
+        {
+          "name": "CP-35 Consultar la trayectoria de la canción (CU-05, RF-03)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-35: responde HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "const t = pm.response.json();",
+                  "pm.test(\"CP-35: trae la canción del catálogo\", function () { pm.expect(t.cancion.idPlataforma).to.eql(\"CAN-PM-\" + pm.collectionVariables.get(\"sufijo\")); });",
+                  "pm.test(\"CP-35: tres puntos en orden cronológico\", function () { pm.expect(t.puntos.length).to.eql(3); pm.expect(t.puntos[0].fechaCaptura < t.puntos[1].fechaCaptura).to.be.true; pm.expect(t.puntos[1].fechaCaptura < t.puntos[2].fechaCaptura).to.be.true; });",
+                  "pm.test(\"CP-35: movimientos NUEVA, SUBIO y BAJO\", function () { pm.expect(t.puntos.map(p => p.movimiento)).to.eql([\"NUEVA\", \"SUBIO\", \"BAJO\"]); });",
+                  "pm.test(\"CP-35: diferencias +6 y -3\", function () { pm.expect(t.puntos[0].diferencia).to.eql(null); pm.expect(t.puntos[1].diferencia).to.eql(6); pm.expect(t.puntos[2].diferencia).to.eql(-3); });",
+                  "pm.test(\"CP-35: incluye streams y nombre de la lista\", function () { pm.expect(t.puntos[1].streams).to.eql(12345); pm.expect(t.puntos[0].nombreLista).to.include(\"Top 50 Colombia PM\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{analistaUsuario}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{analistaClave}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/canciones/{{idCancion}}/trayectoria",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "canciones",
+                "{{idCancion}}",
+                "trayectoria"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CP-36 Consultar la trayectoria de una canción que no existe",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-36: responde HTTP 404\", function () { pm.response.to.have.status(404); });",
+                  "pm.test(\"CP-36: el mensaje contiene 'No existe una canción'\", function () { pm.expect(pm.response.json().mensaje).to.include(\"No existe una canción\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{analistaUsuario}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{analistaClave}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/canciones/999999/trayectoria",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "canciones",
+                "999999",
+                "trayectoria"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Integridad",
+      "item": [
+        {
+          "name": "CP-37 Eliminar una canción que ya tiene historial",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-37: responde HTTP 400\", function () { pm.response.to.have.status(400); });",
+                  "pm.test(\"CP-37: el mensaje contiene 'historial'\", function () { pm.expect(pm.response.json().mensaje).to.include(\"historial\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsuario}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminClave}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/canciones/{{idCancion}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "canciones",
+                "{{idCancion}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CP-38 Eliminar una lista que ya tiene historial",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-38: responde HTTP 400\", function () { pm.response.to.have.status(400); });",
+                  "pm.test(\"CP-38: el mensaje contiene 'historial'\", function () { pm.expect(pm.response.json().mensaje).to.include(\"historial\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsuario}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminClave}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/listas/{{idLista}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "listas",
+                "{{idLista}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Limpieza",
+      "item": [
+        {
+          "name": "CP-39 Eliminar la captura 1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-39: responde HTTP 204\", function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsuario}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminClave}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tendencias/{{idTend1}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tendencias",
+                "{{idTend1}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CP-40 Eliminar la captura 2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-40: responde HTTP 204\", function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsuario}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminClave}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tendencias/{{idTend2}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tendencias",
+                "{{idTend2}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CP-41 Eliminar la captura 3",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-41: responde HTTP 204\", function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsuario}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminClave}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tendencias/{{idTend3}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tendencias",
+                "{{idTend3}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CP-42 Eliminar una captura que no existe",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-42: responde HTTP 404\", function () { pm.response.to.have.status(404); });",
+                  "pm.test(\"CP-42: el mensaje contiene 'No existe una captura'\", function () { pm.expect(pm.response.json().mensaje).to.include(\"No existe una captura\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsuario}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminClave}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tendencias/999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tendencias",
+                "999999"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CP-43 Eliminar la canción (ya sin historial)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-43: responde HTTP 204\", function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsuario}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminClave}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/canciones/{{idCancion}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "canciones",
+                "{{idCancion}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CP-44 Eliminar la lista (ya sin historial)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-44: responde HTTP 204\", function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsuario}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminClave}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/listas/{{idLista}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "listas",
+                "{{idLista}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CP-45 Eliminar el artista",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-45: responde HTTP 204\", function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsuario}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminClave}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/artistas/{{idArtista}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "artistas",
+                "{{idArtista}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CP-46 Comprobar que la canción eliminada ya no existe",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-46: responde HTTP 404\", function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{analistaUsuario}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{analistaClave}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/canciones/{{idCancion}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "canciones",
+                "{{idCancion}}"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
